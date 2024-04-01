@@ -1,0 +1,8 @@
+__pycache__/
+phdata.txt
+ecdata.txt
+*.egg-info
+dist/
+.DS_Store
+.venv
+.pypirc
