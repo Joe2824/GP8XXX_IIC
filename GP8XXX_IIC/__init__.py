@@ -26,6 +26,7 @@ class GP8XXX(ABC):
     def set_dac_out_voltage(self, voltage, channel):
         pass
 
+
 class GP8XXX_IIC(GP8XXX):
     """
     I2C class initialization
@@ -41,8 +42,8 @@ class GP8XXX_IIC(GP8XXX):
         self._bus = bus
         self._device_addr = device_addr
         self._auto_range = auto_range
-        self.channel0 = 0
-        self.channel1 = 0
+        self.channel0 = {'value': 0, 'changed': False, 'dac_voltage': None}
+        self.channel1 = {'value': 0, 'changed': False, 'dac_voltage': None}
 
         self._i2c = SMBus(self._bus)
 
@@ -71,51 +72,83 @@ class GP8XXX_IIC(GP8XXX):
     def set_dac_out_voltage(self, voltage: float, channel: int = 0):
         """
         Set different channel output DAC values
-        - param voltage [int]: value corresponding to the output voltage value (e.g. 4.321V is 4321)
+        - param voltage [int]: value corresponding to the output voltage value (e.g. 4.321V)
         - param channel [int]: integer representing the output channel
           - 0: Channel 0
           - 1: Channel 1
           - 2: All channels
         """
-        voltage = float(voltage)
+
+        if channel == 1 and isinstance(self, (GP8211S, GP8512)):
+            raise ValueError(
+                "Unsupported channel. The DAC only supports channel 0.")
+
+        voltage = float(voltage) * 1000
+
+        # Check if voltage is not negative or over dac limits
+        voltage = max(voltage, 0)
+        if voltage > 2500 and self._dac_voltage == 2500 and isinstance(self, (GP8503, GP8512)):
+            voltage = 2500
+        if voltage > 10000 and self._dac_voltage == 10000:
+            voltage = 10000
 
         if channel == 0:
-            self.channel0 = voltage
-        
+            self.channel0['changed'] = self.channel0['value'] != voltage
+            self.channel0['value'] = voltage
+
         if channel == 1:
-            self.channel1 = voltage
+            self.channel1['changed'] = self.channel1['value'] != voltage
+            self.channel1['value'] = voltage
 
-        max_voltage = max(self.channel0, self.channel1)
+        if channel == 2:
+            self.channel0['changed'] = self.channel0['value'] != voltage
+            self.channel1['changed'] = self.channel1['value'] != voltage
+            self.channel0['value'] = voltage
+            self.channel1['value'] = voltage
 
+        max_voltage = max(self.channel0['value'], self.channel1['value'])
+
+        # Check if auto range is enabled and adjust the output range accordingly
         if self._auto_range and 0 <= max_voltage <= 5000:
             self.set_dac_outrange(self.OUTPUT_RANGE_5V)
         elif self._auto_range and 5000 <= max_voltage <= 10000:
             self.set_dac_outrange(self.OUTPUT_RANGE_10V)
 
-        output_value = (voltage / self._dac_voltage) * self._resolution
+        # Calculate the output value based on the DAC voltage and resolution
+        output_value_channel0 = (
+            self.channel0['value'] / self._dac_voltage) * self._resolution
+        output_value_channel1 = (
+            self.channel1['value'] / self._dac_voltage) * self._resolution
 
         if self._resolution == self.RESOLUTION_12_BIT:
-            output_value = int(output_value) << 4
+            output_value_channel0 = int(output_value_channel0) << 4
+            output_value_channel1 = int(output_value_channel1) << 4
         elif self._resolution == self.RESOLUTION_15_BIT:
-            output_value = int(output_value) << 1
+            output_value_channel0 = int(output_value_channel0) << 1
+            output_value_channel1 = int(output_value_channel1) << 1
 
-        if channel == 0:
+        # Write the output value for channel 0
+        update_channel0 = self.channel0['dac_voltage'] != self._dac_voltage or self.channel0['changed']
+        if update_channel0:
             self._i2c.write_word_data(
-                self._device_addr, self.GP8XXX_CONFIG_REG, output_value)
-        elif channel == 1:
+                self._device_addr, self.GP8XXX_CONFIG_REG, output_value_channel0)
+            self.channel0['dac_voltage'] = self._dac_voltage
+            self.channel0['changed'] = False
+
+        # Write the output value for channel 1
+        update_channel1 = self.channel1['dac_voltage'] != self._dac_voltage or self.channel1['changed']
+        if update_channel1:
             self._i2c.write_word_data(
-                self._device_addr, self.GP8XXX_CONFIG_REG << 1, output_value)
-        elif channel == 2:
-            self._i2c.write_word_data(
-                self._device_addr, self.GP8XXX_CONFIG_REG, output_value)
-            self._i2c.write_word_data(
-                self._device_addr, self.GP8XXX_CONFIG_REG << 1, output_value)
+                self._device_addr, self.GP8XXX_CONFIG_REG << 1, output_value_channel1)
+            self.channel1['dac_voltage'] = self._dac_voltage
+            self.channel1['changed'] = False
 
     def store(self):
         """
         FIXME: Unfortunately, I can't get the chip to store the values
         """
         raise NotImplementedError
+
 
 class GP8503(GP8XXX_IIC):
     """
@@ -125,7 +158,8 @@ class GP8503(GP8XXX_IIC):
 
     def __init__(self, bus=1):
         super().__init__(bus=bus, resolution=self.RESOLUTION_12_BIT, auto_range=False)
-        self.voltage = 2500
+        self._dac_voltage = 2500
+
 
 class GP8211S(GP8XXX_IIC):
     """
@@ -137,6 +171,7 @@ class GP8211S(GP8XXX_IIC):
     def __init__(self, bus=1, auto_range=True):
         super().__init__(bus=bus, resolution=self.RESOLUTION_15_BIT, auto_range=auto_range)
 
+
 class GP8512(GP8XXX_IIC):
     """
     15bit DAC I2C to 0-2.5V/0-VCC
@@ -145,7 +180,8 @@ class GP8512(GP8XXX_IIC):
 
     def __init__(self, bus=1):
         super().__init__(bus=bus, resolution=self.RESOLUTION_15_BIT, auto_range=False)
-        self.dac_voltage = 2500
+        self._dac_voltage = 2500
+
 
 class GP8413(GP8XXX_IIC):
     """
@@ -159,6 +195,7 @@ class GP8413(GP8XXX_IIC):
                          device_addr=i2c_addr, auto_range=False)
         self.set_dac_outrange(self.OUTPUT_RANGE_10V)
 
+
 class GP8403(GP8XXX_IIC):
     """
     12bit DAC Dual Channel I2C to 0-5V/0-10V
@@ -170,6 +207,7 @@ class GP8403(GP8XXX_IIC):
     def __init__(self, bus=1, i2c_addr=0x58, auto_range=True):
         super().__init__(bus=bus, resolution=self.RESOLUTION_12_BIT,
                          device_addr=i2c_addr, auto_range=auto_range)
+
 
 class GP8302(GP8XXX_IIC):
     """
@@ -183,7 +221,7 @@ class GP8302(GP8XXX_IIC):
         super().__init__(bus=bus, resolution=self.RESOLUTION_12_BIT,
                          device_addr=i2c_addr, auto_range=auto_range)
 
-    def set_dac_out_electric_current(self, current):
+    def set_dac_out_electric_current(self, current: int):
         """
         Set different channel output DAC values
         - param current [int]: value corresponding to the output current value (e.g. 1.321A is 1321)

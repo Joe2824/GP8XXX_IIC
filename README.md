@@ -32,21 +32,21 @@ while GP8403.begin():
     print("init error")
     time.sleep(1)
 
-# Optional because GP8403 support auto_range
+# Optional
 # GP8403.set_dac_outrange(GP8403.OUTPUT_RANGE_10V)
 
-# Chanel 1: 6.721V ≙ 6721
-GP8403.set_dac_out_voltage(voltage=6721, channel=0)
+# Chanel 1: 6.721V
+GP8403.set_dac_out_voltage(voltage=6.821, channel=0)
 
 time.sleep(3)
 
-# Chanel 2: 2.774V ≙ 2774
-GP8403.set_dac_out_voltage(voltage=2774, channel=1)
+# Chanel 2: 2.774V
+GP8403.set_dac_out_voltage(voltage=2.774, channel=1)
 
 time.sleep(3)
 
-# Chanel 1 & 2: 1.253V ≙ 1253
-GP8403.set_dac_out_voltage(voltage=1253, channel=2)
+# Chanel 1 & 2: 1.253V
+GP8403.set_dac_out_voltage(voltage=0.253, channel=2)
 ```
 
 ## Tested devices
