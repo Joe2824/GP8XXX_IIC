@@ -41,6 +41,8 @@ class GP8XXX_IIC(GP8XXX):
         self._bus = bus
         self._device_addr = device_addr
         self._auto_range = auto_range
+        self.channel0 = 0
+        self.channel1 = 0
 
         self._i2c = SMBus(self._bus)
 
@@ -77,9 +79,17 @@ class GP8XXX_IIC(GP8XXX):
         """
         voltage = float(voltage)
 
-        if self._auto_range and 0 <= voltage <= 5000:
+        if channel == 0:
+            self.channel0 = voltage
+        
+        if channel == 1:
+            self.channel1 = voltage
+
+        max_voltage = max(self.channel0, self.channel1)
+
+        if self._auto_range and 0 <= max_voltage <= 5000:
             self.set_dac_outrange(self.OUTPUT_RANGE_5V)
-        elif self._auto_range and 5000 <= voltage <= 10000:
+        elif self._auto_range and 5000 <= max_voltage <= 10000:
             self.set_dac_outrange(self.OUTPUT_RANGE_10V)
 
         output_value = (voltage / self._dac_voltage) * self._resolution
