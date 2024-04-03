@@ -1,7 +1,7 @@
 # pylint: disable=protected-access
 
 import unittest
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 from GP8XXX_IIC import GP8503, GP8211S, GP8512, GP8413, GP8403, GP8302
 
 
@@ -18,13 +18,15 @@ class TestGP8XXX(unittest.TestCase):
         self.mock_i2c.write_byte_data.return_value = None
         self.mock_i2c.write_word_data.return_value = None
 
-    def test_gp8503(self):
+    @patch('GP8XXX_IIC.SMBus')
+    def test_gp8503(self, mock_smbus):
         """
         Test GP8503 functionality.
 
         This test verifies the functionality of the GP8503 class,
         including initialization and setting DAC output voltage.
         """
+        mock_smbus.return_value = self.mock_i2c
         gp8503 = GP8503()
         gp8503._i2c = self.mock_i2c
 
@@ -50,13 +52,15 @@ class TestGP8XXX(unittest.TestCase):
         self.assertEqual(gp8503.channel1['value'], 1800)
         self.assertEqual(gp8503.channel1['dac_voltage'], 2500)
 
-    def test_gp8211s(self):
+    @patch('GP8XXX_IIC.SMBus')
+    def test_gp8211s(self, mock_smbus):
         """
         Test GP8211S functionality.
 
         This test verifies the functionality of the GP8211S class,
         including initialization and setting DAC output voltage.
         """
+        mock_smbus.return_value = self.mock_i2c
         gp8211s = GP8211S()
         gp8211s._i2c = self.mock_i2c
 
@@ -76,13 +80,15 @@ class TestGP8XXX(unittest.TestCase):
             self.assertEqual(str(context.exception),
                              "Unsupported channel. The DAC only supports channel 0.")
 
-    def test_gp8512(self):
+    @patch('GP8XXX_IIC.SMBus')
+    def test_gp8512(self, mock_smbus):
         """
         Test GP8512 functionality.
 
         This test verifies the functionality of the GP8512 class,
         including initialization and setting DAC output voltage.
         """
+        mock_smbus.return_value = self.mock_i2c
         gp8512 = GP8512()
         gp8512._i2c = self.mock_i2c
 
@@ -109,13 +115,15 @@ class TestGP8XXX(unittest.TestCase):
         self.assertEqual(str(context.exception),
                          "Unsupported channel. The DAC only supports channel 0.")
 
-    def test_gp8413(self):
+    @patch('GP8XXX_IIC.SMBus')
+    def test_gp8413(self, mock_smbus):
         """
         Test GP8413 functionality.
 
         This test verifies the functionality of the GP8413 class,
         including initialization and setting DAC output voltage.
         """
+        mock_smbus.return_value = self.mock_i2c
         gp8413 = GP8413(bus=1, i2c_addr=0)
         gp8413._i2c = self.mock_i2c
 
@@ -129,13 +137,15 @@ class TestGP8XXX(unittest.TestCase):
         self.assertEqual(gp8413.channel0['value'], 3500)
         self.assertEqual(gp8413.channel0['dac_voltage'], 10000)
 
-    def test_gp8403(self):
+    @patch('GP8XXX_IIC.SMBus')
+    def test_gp8403(self, mock_smbus):
         """
         Test GP8403 functionality.
 
         This test verifies the functionality of the GP8403 class,
         including initialization and setting DAC output voltage.
         """
+        mock_smbus.return_value = self.mock_i2c
         gp8403 = GP8403()
         gp8403._i2c = self.mock_i2c
 
@@ -157,13 +167,15 @@ class TestGP8XXX(unittest.TestCase):
         self.assertEqual(gp8403.channel1['value'], 0)
         self.assertEqual(gp8403.channel1['dac_voltage'], 10000)
 
-    def test_gp8302(self):
+    @patch('GP8XXX_IIC.SMBus')
+    def test_gp8302(self, mock_smbus):
         """
         Test GP8302 functionality.
 
         This test verifies the functionality of the GP8302 class,
         including initialization and setting DAC output voltage.
         """
+        mock_smbus.return_value = self.mock_i2c
         gp8302 = GP8302()
         gp8302._i2c = self.mock_i2c
 
