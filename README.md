@@ -45,7 +45,7 @@ GP8403.set_dac_out_voltage(voltage=2.774, channel=1)
 
 time.sleep(3)
 
-# Chanel 1 & 2: 1.253V
+# Chanel 1 & 2: 0.253V
 GP8403.set_dac_out_voltage(voltage=0.253, channel=2)
 ```
 
