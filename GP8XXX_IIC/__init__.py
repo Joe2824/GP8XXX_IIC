@@ -60,6 +60,10 @@ class GP8XXX_IIC(GP8XXX):
         Set the DAC output range
         - param output_range [int]: DAC output range
         """
+        if isinstance(self, (GP8503, GP8512)) or \
+           isinstance(self, (GP8413)) and output_range == self.OUTPUT_RANGE_5V:
+            raise ValueError("DAC doesn't support another output range.")
+
         if output_range == self.OUTPUT_RANGE_5V:
             self._dac_voltage = 5000
             self._i2c.write_byte_data(
