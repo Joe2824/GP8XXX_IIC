@@ -151,12 +151,11 @@ class TestGP8XXX(unittest.TestCase):
         # Test setting output voltage on channel 0
         gp8413.set_dac_out_voltage(3.5, 0)
         self.assertEqual(gp8413.channel0['value'], 3500)
-        self.assertEqual(gp8413.channel0['dac_voltage'], 10000)
+        self.assertEqual(gp8413.channel0['dac_voltage'], 5000)
 
-        with self.assertRaises(ValueError) as context:
-            gp8413.set_dac_outrange(gp8413.OUTPUT_RANGE_5V)
-            self.assertEqual(str(context.exception),
-                             "DAC does't support another output range.")
+        gp8413.set_dac_out_voltage(9.2, 0)
+        self.assertEqual(gp8413.channel0['value'], 9200)
+        self.assertEqual(gp8413.channel0['dac_voltage'], 10000)
 
 
     @patch('GP8XXX_IIC.SMBus')
@@ -195,6 +194,12 @@ class TestGP8XXX(unittest.TestCase):
         self.assertEqual(gp8403.channel1['value'], 0)
         self.assertEqual(gp8403.channel1['dac_voltage'], 10000)
 
+        value = float(7.8321)
+        expected_channel_value = float(value * 1000)
+        gp8403.set_dac_out_voltage(value, 1)
+        self.assertEqual(gp8403.channel1['value'], expected_channel_value)
+        self.assertEqual(gp8403.channel1['dac_voltage'], 10000)
+
     @patch('GP8XXX_IIC.SMBus')
     def test_gp8302(self, mock_smbus):
         """
@@ -210,9 +215,6 @@ class TestGP8XXX(unittest.TestCase):
         gp8302.begin()
         self.mock_i2c.read_byte.assert_called_once_with(gp8302._device_addr)
 
-        gp8302.set_dac_outrange(gp8302.OUTPUT_RANGE_10V)
-        self.assertEqual(gp8302._dac_voltage, 10000)
-
         gp8302.set_dac_outrange(gp8302.OUTPUT_RANGE_5V)
         self.assertEqual(gp8302._dac_voltage, 5000)
 
@@ -223,12 +225,6 @@ class TestGP8XXX(unittest.TestCase):
         gp8302.set_dac_out_voltage(0.167, 0)
         self.assertEqual(gp8302.channel0['value'], 167)
         self.assertEqual(gp8302.channel0['dac_voltage'], 5000)
-
-        value = 7.8321
-        expected_channel_value = float(value * 1000)
-        gp8302.set_dac_out_voltage(value, 1)
-        self.assertEqual(gp8302.channel1['value'], expected_channel_value)
-        self.assertEqual(gp8302.channel1['dac_voltage'], 10000)
 
         gp8302.set_dac_out_voltage(0, 1)
         self.assertEqual(gp8302.channel1['value'], 0)

@@ -60,8 +60,7 @@ class GP8XXX_IIC(GP8XXX):
         Set the DAC output range
         - param output_range [int]: DAC output range
         """
-        if isinstance(self, (GP8503, GP8512)) or \
-           isinstance(self, (GP8413)) and output_range == self.OUTPUT_RANGE_5V:
+        if isinstance(self, (GP8503, GP8512)):
             raise ValueError("DAC doesn't support another output range.")
 
         if output_range == self.OUTPUT_RANGE_5V:
@@ -189,14 +188,14 @@ class GP8512(GP8XXX_IIC):
 
 class GP8413(GP8XXX_IIC):
     """
-    15bit DAC Dual Channel I2C to 0-10V
+    15bit DAC Dual Channel I2C to 0-5V/0-10V
     - param bus: the i2c bus number
     - param i2c_addr: the I2C device address 
     """
 
-    def __init__(self, bus=1, i2c_addr=0x58):
+    def __init__(self, bus=1, i2c_addr=0x58, auto_range=True):
         super().__init__(bus=bus, resolution=self.RESOLUTION_15_BIT,
-                         device_addr=i2c_addr, auto_range=False)
+                         device_addr=i2c_addr, auto_range=auto_range)
         self.set_dac_outrange(self.OUTPUT_RANGE_10V)
 
 
@@ -215,19 +214,36 @@ class GP8403(GP8XXX_IIC):
 
 class GP8302(GP8XXX_IIC):
     """
-    12bit DAC Dual Channel I2C to 0-5V/0-10V
+    12bit DAC I2C to 0-25mA
     - param bus: the i2c bus number
-    - param i2c_addr: the I2C device address 
-    - param auto_range: automatically selects the correct output range 
     """
 
-    def __init__(self, bus=1, i2c_addr=0x58, auto_range=True):
+    def __init__(self, bus=1, i2c_addr=0x58):
         super().__init__(bus=bus, resolution=self.RESOLUTION_12_BIT,
-                         device_addr=i2c_addr, auto_range=auto_range)
+                         device_addr=i2c_addr, auto_range=False)
+        self._dac_4 = 0
+        self._dac_20 = 0
+        self._calibration = False
+        self._dac_voltage = 2500
+
+
+    def calibration4_20ma(self, dac_4 = 655, dac_20 = 3277):
+        """
+        Calibrate the current within 4-20mA
+        - param dac_4: Range 0-0xFFF, the calibration is invalid if the value is out of range, the DAC value corresponding to current of 4mA generally fluctuates at about 655, the actual value needs to be tested by the user in actual applications
+        - param dac_20: Range 0-0xFFF, the calibration is invalid if the value is out of range, the DAC value corresponding to current of 20mA generally fluctuates at about 3277, the actual value needs to be tested by the user in actual applications
+        """
+        
+        if dac_4 >= dac_20 or dac_20 > self._resolution:
+            return None
+        self._dac_4       = dac_4
+        self._dac_20      = dac_20
+        self._calibration = True
+
 
     def set_dac_out_electric_current(self, current: int):
         """
         Set different channel output DAC values
-        - param current [int]: value corresponding to the output current value (e.g. 1.321A is 1321)
+        - param current [int]: value corresponding to the output current value (e.g. 0.03A)
         """
         return self.set_dac_out_voltage(current)
