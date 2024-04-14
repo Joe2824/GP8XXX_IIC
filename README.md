@@ -7,12 +7,12 @@ The GP8XXX-IIC module provides an interface for controlling DAC (Digital to Anal
 - **I2C Communication**: Utilizes the smbus2 library for communicating with DAC devices over the I2C bus.
 - **Output Ranges**: Supports different output voltage ranges including 0-5V, 0-10V.
 - **Support Multiple DAC Models**:
-  - GP8503: 12-bit DAC Dual Channel I2C to 0-2.5V/0-VCC
+  - GP8302: 12-bit DAC I2C to 0-25mA/4-20mA
   - GP8211S: 15-bit DAC I2C to 0-5V/0-10V
   - GP8512: 15-bit DAC I2C to 0-2.5V/0-VCC
-  - GP8413: 15-bit DAC Dual Channel I2C to 0-10V
+  - GP8503: 12-bit DAC Dual Channel I2C to 0-2.5V/0-VCC
+  - GP8413: 15-bit DAC Dual Channel I2C to 0-5V/0-10V
   - GP8403: 12-bit DAC Dual Channel I2C to 0-5V/0-10V
-  - GP8302: 12-bit DAC Dual Channel I2C to 0-5V/0-10V
 
 ## Installation
 You can install the GP8XXX module from PyPI using pip:
@@ -26,7 +26,7 @@ pip install GP8XXX-IIC
 import time
 from GP8XXX_IIC import GP8403
 
-GP8403 = GP8403(i2c_addr=0x5F, auto_range=True)
+GP8403 = GP8403(i2c_addr=0x5F)
 
 while GP8403.begin():
     print("init error")
