@@ -57,6 +57,6 @@ GP8403.set_dac_out_voltage(voltage=0.253, channel=2)
 |GP8211S     | ❌     |
 |GP8512      | ❌     |
 |GP8512      | ❌     |
-|GP8413      | ❌     |
+|GP8413      | ✅     |
 |GP8403      | ✅     |
 |GP8302      | ❌     |
